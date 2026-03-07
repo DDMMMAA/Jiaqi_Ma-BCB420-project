@@ -901,7 +901,8 @@ Refer to original paper ([Garza et al, 2023](https://doi.org/10.1016/j.celrep.20
 
 ```{r}
 # Install presto package for faster Wilcoxon Rank Sum Test
-devtools::install_github('immunogenomics/presto')
+if (!requireNamespace("presto", quietly = TRUE))
+  devtools::install_github('immunogenomics/presto')
 
 # Find DEs between contorl and tbi group
 Condition_DE_list <- FindMarkers(combined_seurat_filtered, ident.1 = "control", ident.2 = "tbi", group.by = "Condition")
@@ -1030,6 +1031,22 @@ heatmap_plot
 **Figure 10:** Heatmap of top 20 gene with lowest adjusted p value. Y-axis indicate the HOGO symbol of selected genes; Each timy column along X-asix is a cell; The left half indicate their expression level in control group; The right half indicate their expression level in tbi group.
 
 The heatmap doesn't show clear cluster between control and tbi group. There is minor brightness difference with control group being darker, indicate overall higher expression level in control group. One hypothesis is that samples in tbi group are more likely to loss cell integraty and experience RNA leakage result from impact damage.
+
+# Save resulting Seurat object and DEG list
+
+To avoid Assignment #2 inherits the limited RAM issue by re-run all Assignment #1, save resulting `Seurat object` and `DEG list` to disk for Assignment #2 to read.
+
+```{r}
+# Set the working directory to the parent directory of A1 and A2
+setwd("~/projects/Jiaqi_Ma")
+
+# Create a new directory storing the resulting object of A1
+dir.create("a1_result", showWarnings = FALSE)
+
+# Save resulting object
+saveRDS(combined_seurat_filtered, file = "a1_result/a1_seurat_result.rds")
+saveRDS(Condition_DE_list, file = "a1_result/a1_de_result.rds")
+```
 
 # Conclustion
 
