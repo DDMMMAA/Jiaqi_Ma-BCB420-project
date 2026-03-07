@@ -1,0 +1,94 @@
+---
+title: "Assignment #2"
+author: "Jiaqi Ma"
+date: "`r Sys.Date()`"
+output:
+  bookdown::html_document2:
+    code_folding: hide  
+    theme: journal
+    fig.caption: true
+    toc: true                  
+    toc_depth: 3                
+    toc_float: true
+bibliography: BCB420.bib
+link-citations: true
+nocite: '@*'
+---
+
+```{=html}
+<style>
+body {
+  font-size: 16px;
+}
+
+caption {
+  font-size: 14px;
+  font-style: italic;
+}
+</style>
+```
+
+```{r setup, include=FALSE, echo=FALSE}
+knitr::opts_chunk$set(
+                      warning = FALSE, # suppressing warning messages
+                      message = FALSE,
+                      knitr.kable.max_rows = 5)
+```
+
+# Introduction to Assignment #1
+
+...
+
+## Import Assignment #1 result
+
+...
+
+# Thresholded over-representation analysis
+
+...
+
+## Choice of Method
+
+...
+
+## Annotation resource and verion
+
+...
+
+## result
+
+...
+
+## Interpretation
+
+...
+
+# Non-thresholded Gene set Enrichment analysis
+
+...
+
+## Choice of Method
+
+...
+
+## Annotation resource and verion
+
+...
+
+## result
+
+...
+
+## Interpretation
+
+...
+
+# Cytoscape Visualization
+
+...
+
+# Interpretation
+
+...
+
+# References {#references}
