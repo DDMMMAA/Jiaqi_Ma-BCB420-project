@@ -1604,10 +1604,14 @@ font-size: 14px;
 font-style: italic;
 }
 </style>
-<div id="introduction-to-assignment-1" class="section level1" number="1">
-<h1><span class="header-section-number">1</span> Introduction to Assignment #1</h1>
-<div id="dataset-introduction" class="section level2" number="1.1">
-<h2><span class="header-section-number">1.1</span> Dataset introduction</h2>
+<div id="attach-packages" class="section level1" number="1">
+<h1><span class="header-section-number">1</span> Attach packages</h1>
+<pre class="r"><code>library(dplyr)</code></pre>
+</div>
+<div id="introduction-to-assignment-1" class="section level1" number="2">
+<h1><span class="header-section-number">2</span> Introduction to Assignment #1</h1>
+<div id="dataset-introduction" class="section level2" number="2.1">
+<h2><span class="header-section-number">2.1</span> Dataset introduction</h2>
 <ul>
 <li>The choice of dataset is <code>GSE209552</code>, published by <a href="https://doi.org/10.1016/j.celrep.2023.113395">Garze et al, 2023</a></li>
 <li><code>GSE209552</code> contain both <code>snRNA-seq</code> and <code>bulk RNA-seq</code> data</li>
@@ -1619,10 +1623,10 @@ font-style: italic;
 <div class="figcaption">Figure 1: Data overview (Garza et al, 2023; Supplemental table 1)</div>
 </div>
 </div>
-<div id="assignment-1-result-introduction" class="section level2" number="1.2">
-<h2><span class="header-section-number">1.2</span> Assignment #1 result introduction</h2>
-<div id="quality-control" class="section level3" number="1.2.1">
-<h3><span class="header-section-number">1.2.1</span> Quality control</h3>
+<div id="assignment-1-result-introduction" class="section level2" number="2.2">
+<h2><span class="header-section-number">2.2</span> Assignment #1 result introduction</h2>
+<div id="quality-control" class="section level3" number="2.2.1">
+<h3><span class="header-section-number">2.2.1</span> Quality control</h3>
 <ul>
 <li>Only <code>snRNA-seq</code> data were subject to analysis.</li>
 <li>Sample <code>GSM6376814</code> was removed because of it low data quality indicate by lowest coverage, depth and highest mitochondrial transcript percentage.</li>
@@ -1630,8 +1634,8 @@ font-style: italic;
 <li>In the end, <code>2887/24621 = 11.7%</code> cells were removed.</li>
 </ul>
 </div>
-<div id="normalization-and-scoring" class="section level3" number="1.2.2">
-<h3><span class="header-section-number">1.2.2</span> Normalization and scoring</h3>
+<div id="normalization-and-scoring" class="section level3" number="2.2.2">
+<h3><span class="header-section-number">2.2.2</span> Normalization and scoring</h3>
 <ul>
 <li><code>Log-Normalization</code> with a scale factor of <code>10000</code> was selected because it’s well adapted to zero-inflated <code>snRNA-seq</code> data.</li>
 <li><code>Wilcoxon Rank-Sum test</code> was utilized to identify differentially expressed genes (DEGs).</li>
@@ -1641,8 +1645,8 @@ font-style: italic;
 ## 0.02469 0.60785 1.09461 1.26379 1.77515 8.30359</code></pre>
 </div>
 </div>
-<div id="import-assignment-1-result" class="section level2" number="1.3">
-<h2><span class="header-section-number">1.3</span> Import Assignment #1 result</h2>
+<div id="import-assignment-1-result" class="section level2" number="2.3">
+<h2><span class="header-section-number">2.3</span> Import Assignment #1 result</h2>
 <p>To avoid assignment #2 to inherits assignment #1’s RAM issue. I choice only save needed <code>DEGs list</code> result from assignment #1 rather include assignment #1 as a child section suggested in <a href="https://q.utoronto.ca/courses/415975/assignments/1653017?module_item_id=7359436">assignment #2 instruction</a>. This is a way to trade RAM efficiency with reproducibility and code elegancy.</p>
 <pre><code># At the end of `A1_JiaqiMa.Rmd`
 # Set the working directory to the parent directory of A1 and A2
@@ -1691,52 +1695,72 @@ rm(dest_file)
 rm(rds_url)</code></pre>
 </div>
 </div>
-<div id="thresholded-over-representation-analysis" class="section level1" number="2">
-<h1><span class="header-section-number">2</span> Thresholded over-representation analysis</h1>
-<p>…</p>
-<div id="choice-of-method" class="section level2" number="2.1">
-<h2><span class="header-section-number">2.1</span> Choice of Method</h2>
-<p>…</p>
+<div id="modify-ranking" class="section level1" number="3">
+<h1><span class="header-section-number">3</span> Modify ranking</h1>
+<p>As shown above, there exist multiple genes share same <code>p_val_adj</code>. This will create ambiguity while rank by <code>p_val_adj</code>. This is again another consequence of zero-inflation property of <code>snRNA-seq</code>. To address this, I combined <code>p_val_adj</code> and <code>avg_log2FC</code> to calculate another <code>p_FC</code> value.</p>
+<p><span class="math display">\[\mathtt{p\_FC} = (1 - \mathtt{p\_val\_adj}) \times \mathtt{avg\_log2\_FC}\]</span></p>
+<p><code>(1 - p_val_adj)</code> is the probability of observed result is <strong>NOT</strong> due to randomness. Times with <code>avg_log2FC</code> yield a <code>expected average fold change</code> <strong>NOT</strong> due to randomness. The direction of regulation (positive <code>p_FC</code> implied upregulation in control) is preserved since none of the operation will alter the sign of <code>avg_log2FC</code>. The genes at the very top and button of the list corresponding to genes that have both low <code>p_val_adj</code> and high <code>avg_log2FC</code>.</p>
+<pre class="r"><code># Calculate the metric and sort, overwriting the object in place
+a1_de_result &lt;- a1_de_result %&gt;%
+  mutate(p_FC = (1 - p_val_adj) * avg_log2FC) %&gt;%
+  arrange(desc(p_FC))
+
+# Verify the top upregulated genes now sit at the top of your dataframe
+head(a1_de_result)</code></pre>
+<pre><code>##                    p_val avg_log2FC pct.1 pct.2     p_val_adj     p_FC
+## AC012414.3  1.877879e-37   6.489352 0.014 0.000  4.767746e-33 6.489352
+## GDPD2       7.045727e-38   5.519353 0.015 0.001  1.788840e-33 5.519353
+## LINC00500   3.248036e-34   4.231967 0.013 0.000  8.246438e-30 4.231967
+## LINC00499  9.351110e-198   4.230192 0.097 0.009 2.374153e-193 4.230192
+## AC016687.2 6.119255e-237   3.990126 0.125 0.015 1.553618e-232 3.990126
+## LINC02207   8.238633e-47   3.940072 0.022 0.002  2.091707e-42 3.940072</code></pre>
 </div>
-<div id="annotation-resource-and-verion" class="section level2" number="2.2">
-<h2><span class="header-section-number">2.2</span> Annotation resource and verion</h2>
+<div id="thresholded-over-representation-analysis" class="section level1" number="4">
+<h1><span class="header-section-number">4</span> Thresholded over-representation analysis</h1>
 <p>…</p>
-</div>
-<div id="result" class="section level2" number="2.3">
-<h2><span class="header-section-number">2.3</span> result</h2>
-<p>…</p>
-</div>
-<div id="interpretation" class="section level2" number="2.4">
-<h2><span class="header-section-number">2.4</span> Interpretation</h2>
-<p>…</p>
-</div>
-</div>
-<div id="non-thresholded-gene-set-enrichment-analysis" class="section level1" number="3">
-<h1><span class="header-section-number">3</span> Non-thresholded Gene set Enrichment analysis</h1>
-<p>…</p>
-<div id="choice-of-method-1" class="section level2" number="3.1">
-<h2><span class="header-section-number">3.1</span> Choice of Method</h2>
-<p>…</p>
-</div>
-<div id="annotation-resource-and-verion-1" class="section level2" number="3.2">
-<h2><span class="header-section-number">3.2</span> Annotation resource and verion</h2>
+<div id="choice-of-method" class="section level2" number="4.1">
+<h2><span class="header-section-number">4.1</span> Choice of Method</h2>
 <p>…</p>
 </div>
-<div id="result-1" class="section level2" number="3.3">
-<h2><span class="header-section-number">3.3</span> result</h2>
+<div id="annotation-resource-and-verion" class="section level2" number="4.2">
+<h2><span class="header-section-number">4.2</span> Annotation resource and verion</h2>
 <p>…</p>
 </div>
-<div id="interpretation-1" class="section level2" number="3.4">
-<h2><span class="header-section-number">3.4</span> Interpretation</h2>
+<div id="result" class="section level2" number="4.3">
+<h2><span class="header-section-number">4.3</span> result</h2>
+<p>…</p>
+</div>
+<div id="interpretation" class="section level2" number="4.4">
+<h2><span class="header-section-number">4.4</span> Interpretation</h2>
 <p>…</p>
 </div>
 </div>
-<div id="cytoscape-visualization" class="section level1" number="4">
-<h1><span class="header-section-number">4</span> Cytoscape Visualization</h1>
+<div id="non-thresholded-gene-set-enrichment-analysis" class="section level1" number="5">
+<h1><span class="header-section-number">5</span> Non-thresholded Gene set Enrichment analysis</h1>
+<p>…</p>
+<div id="choice-of-method-1" class="section level2" number="5.1">
+<h2><span class="header-section-number">5.1</span> Choice of Method</h2>
 <p>…</p>
 </div>
-<div id="interpretation-2" class="section level1" number="5">
-<h1><span class="header-section-number">5</span> Interpretation</h1>
+<div id="annotation-resource-and-verion-1" class="section level2" number="5.2">
+<h2><span class="header-section-number">5.2</span> Annotation resource and verion</h2>
+<p>…</p>
+</div>
+<div id="result-1" class="section level2" number="5.3">
+<h2><span class="header-section-number">5.3</span> result</h2>
+<p>…</p>
+</div>
+<div id="interpretation-1" class="section level2" number="5.4">
+<h2><span class="header-section-number">5.4</span> Interpretation</h2>
+<p>…</p>
+</div>
+</div>
+<div id="cytoscape-visualization" class="section level1" number="6">
+<h1><span class="header-section-number">6</span> Cytoscape Visualization</h1>
+<p>…</p>
+</div>
+<div id="interpretation-2" class="section level1" number="7">
+<h1><span class="header-section-number">7</span> Interpretation</h1>
 <p>…</p>
 </div>
 <div id="references" class="section level1 unnumbered">

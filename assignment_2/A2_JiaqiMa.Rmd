@@ -35,6 +35,13 @@ knitr::opts_chunk$set(
                       knitr.kable.max_rows = 5)
 ```
 
+# Attach packages
+
+```{r}
+library(dplyr)
+```
+
+
 # Introduction to Assignment #1
 
 ## Dataset introduction
