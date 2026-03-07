@@ -37,11 +37,103 @@ knitr::opts_chunk$set(
 
 # Introduction to Assignment #1
 
-...
+## Dataset introduction
+
+-   The choice of dataset is `GSE209552`, published by [Garze et al, 2023](https://doi.org/10.1016/j.celrep.2023.113395)
+-   `GSE209552` contain both `snRNA-seq` and `bulk RNA-seq` data
+-   Control: non-neuronal death postmortem brain
+-   Treatment: Traumatic brain injury (TBI)
+
+![Figure 1: Data overview (Garza et al, 2023; Supplemental table 1)](Data_description.png)
+
+## Assignment #1 result introduction
+
+### Quality control
+
+-   Only `snRNA-seq` data were subject to analysis.
+-   Sample `GSM6376814` was removed because of it low data quality indicate by lowest coverage, depth and highest mitochondrial transcript percentage.
+-   Empirical threshold of 10% mitochondrial percentage was applied to remove any cell which has higher than 10% mitochondrial percent.
+-   In the end, `2887/24621 = 11.7%` cells were removed.
+
+### Normalization and scoring
+
+-   `Log-Normalization` with a scale factor of `10000` was selected because it's well adapted to zero-inflated `snRNA-seq` data.
+-   `Wilcoxon Rank-Sum test` was utilized to identify differentially expressed genes (DEGs).
+-   `Bonferroni correction` was utilized to adjust `p-value`.
+
+```         
+##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+## 0.02469 0.60785 1.09461 1.26379 1.77515 8.30359
+```
 
 ## Import Assignment #1 result
 
-...
+To avoid assignment #2 to inherits assignment #1's RAM issue. I choice only save needed `DEGs list` result from assignment #1 rather include assignment #1 as a child section suggested in [assignment #2 instruction](https://q.utoronto.ca/courses/415975/assignments/1653017?module_item_id=7359436). This is a way to trade RAM efficiency with reproducibility and code elegancy.
+
+```         
+# At the end of `A1_JiaqiMa.Rmd`
+# Set the working directory to the parent directory of A1 and A2
+setwd("~/projects/Jiaqi_Ma")
+
+# Create a new directory storing the resulting object of A1
+dir.create("a1_result", showWarnings = FALSE)
+
+# Save resulting object
+saveRDS(combined_seurat_filtered, file = "a1_result/a1_seurat_result.rds")
+saveRDS(Condition_DE_list, file = "a1_result/a1_de_result.rds")
+```
+
+For the sake of reproducibility, I've pushed the `a1_de_result.rds` to my [github repo](https://github.com/bcb420-2026/Jiaqi_Ma/blob/main/a1_result/a1_de_result.rds) so that any machine can access this file.
+
+Now, fetch the `DEGs` list from [github repo](https://github.com/bcb420-2026/Jiaqi_Ma/blob/main/a1_result/a1_de_result.rds) and save it to disk
+
+```{r}
+# Define the exact RAW GitHub URL for your RDS file
+rds_url <- "https://raw.githubusercontent.com/bcb420-2026/Jiaqi_Ma/main/a1_result/a1_de_result.rds"
+
+# Define a local destination path inside your working directory
+dest_file <- "a1_de_result.rds"
+
+# Download the binary file safely
+tryCatch({
+  if (!file.exists(dest_file)) {
+    message("Downloading DE results from GitHub...")
+    download.file(url = rds_url, destfile = dest_file, mode = "wb")
+  }
+  
+  # Load it into your environment
+  a1_de_result <- readRDS(dest_file)
+  message("Successfully loaded the Differential Expression list.")
+  
+}, error = function(e) {
+  stop("Critical Error: Failed to download or read the RDS file. Check your internet connection and URL.")
+})
+
+# Verify the structure to ensure row names (gene symbols) are intact
+head(a1_de_result)
+
+# Clean variable
+rm(dest_file)
+rm(rds_url)
+```
+
+# Modify ranking
+
+As shown above, there exist multiple genes share same `p_val_adj`. This will create ambiguity while rank by `p_val_adj`. This is again another consequence of zero-inflation property of `snRNA-seq`. To address this, I combined `p_val_adj` and `avg_log2FC` to calculate another `p_FC` value.
+
+$$\mathtt{p\_FC} = (1 - \mathtt{p\_val\_adj}) \times \mathtt{avg\_log2\_FC}$$
+
+`(1 - p_val_adj)` is the probability of observed result is **NOT** due to randomness. Times with `avg_log2FC` yield a `expected average fold change` **NOT** due to randomness. The direction of regulation (positive `p_FC` implied upregulation in control) is preserved since none of the operation will alter the sign of `avg_log2FC`. The genes at the very top and button of the list corresponding to genes that have both low `p_val_adj` and high `avg_log2FC`.
+
+```{r}
+# Calculate the metric and sort, overwriting the object in place
+a1_de_result <- a1_de_result %>%
+  mutate(p_FC = (1 - p_val_adj) * avg_log2FC) %>%
+  arrange(desc(p_FC))
+
+# Verify the top upregulated genes now sit at the top of your dataframe
+head(a1_de_result)
+```
 
 # Thresholded over-representation analysis
 
