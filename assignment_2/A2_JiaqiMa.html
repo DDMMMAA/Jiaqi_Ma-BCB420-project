@@ -1753,44 +1753,61 @@ all_sig_genes &lt;- a1_de_result %&gt;%
   filter(p_val_adj &lt; p_val_adj_threshold)
 
 # Print the sizes of the lists for the report
-message(&quot;Up-regulated genes: &quot;, nrow(up_genes))
-message(&quot;Down-regulated genes: &quot;, nrow(down_genes))
-message(&quot;Total significant genes: &quot;, nrow(all_sig_genes))</code></pre>
+cat(&quot;Total genes before thresholding:&quot;, nrow(a1_de_result), &quot;\n&quot;)</code></pre>
+<pre><code>## Total genes before thresholding: 15379</code></pre>
+<pre class="r"><code>cat(&quot;Total significant genes: &quot;, nrow(all_sig_genes), &quot;\n&quot;)</code></pre>
+<pre><code>## Total significant genes:  12223</code></pre>
+<pre class="r"><code>cat(&quot;Significant genes percentage: &quot;, nrow(all_sig_genes) / nrow(a1_de_result), &quot;\n&quot;)</code></pre>
+<pre><code>## Significant genes percentage:  0.7947851</code></pre>
+<pre class="r"><code>cat(&quot;Up-regulated genes: &quot;, nrow(up_genes), &quot;\n&quot;)</code></pre>
+<pre><code>## Up-regulated genes:  5904</code></pre>
+<pre class="r"><code>cat(&quot;Down-regulated genes: &quot;, nrow(down_genes), &quot;\n&quot;)</code></pre>
+<pre><code>## Down-regulated genes:  6319</code></pre>
+<pre class="r"><code># Clean variable
+rm(p_val_adj_threshold)</code></pre>
 </div>
-<div id="choice-of-method" class="section level2" number="4.2">
-<h2><span class="header-section-number">4.2</span> Choice of Method</h2>
-<p>…</p>
+<div id="result" class="section level2" number="4.2">
+<h2><span class="header-section-number">4.2</span> result</h2>
+<pre class="r"><code># Run Thresholded ORA using gprofiler2
+ora_results &lt;- gost(
+  query = list(
+    &quot;Up_regulated&quot; = up_genes$Gene, 
+    &quot;Down_regulated&quot; = down_genes$Gene, 
+    &quot;All_Significant&quot; = all_sig_genes$Gene
+  ),
+  organism = &quot;hsapiens&quot;, # GSE209552 is human postmortem brain data
+  ordered_query = FALSE, # CRITICAL: Must be FALSE for strict thresholded ORA
+  significant = TRUE,    # Only return statistically significant pathways
+  exclude_iea = TRUE,    # Exclude Inferred from Electronic Annotation (high confidence only)
+  correction_method = &quot;fdr&quot;, # False Discovery Rate (Benjamini-Hochberg)
+  sources = c(&quot;GO:BP&quot;)   # Restrict to Gene Ontology: Biological Process for interpretability
+)
+
+# Extract and print the number of significant genesets returned for each list
+cat(&quot;Significant GO:BP pathways for Up-regulated genes:&quot;, 
+    sum(ora_results$result$query == &quot;Up_regulated&quot;), &quot;\n&quot;)</code></pre>
+<pre><code>## Significant GO:BP pathways for Up-regulated genes: 112</code></pre>
+<pre class="r"><code>cat(&quot;Significant GO:BP pathways for Down-regulated genes:&quot;, 
+    sum(ora_results$result$query == &quot;Down_regulated&quot;), &quot;\n&quot;)</code></pre>
+<pre><code>## Significant GO:BP pathways for Down-regulated genes: 579</code></pre>
+<pre class="r"><code>cat(&quot;Significant GO:BP pathways for All Significant genes:&quot;, 
+    sum(ora_results$result$query == &quot;All_Significant&quot;), &quot;\n&quot;)</code></pre>
+<pre><code>## Significant GO:BP pathways for All Significant genes: 496</code></pre>
 </div>
-<div id="annotation-resource-and-verion" class="section level2" number="4.3">
-<h2><span class="header-section-number">4.3</span> Annotation resource and verion</h2>
-<p>…</p>
-</div>
-<div id="result" class="section level2" number="4.4">
-<h2><span class="header-section-number">4.4</span> result</h2>
-<p>…</p>
-</div>
-<div id="interpretation" class="section level2" number="4.5">
-<h2><span class="header-section-number">4.5</span> Interpretation</h2>
+<div id="interpretation" class="section level2" number="4.3">
+<h2><span class="header-section-number">4.3</span> Interpretation</h2>
 <p>…</p>
 </div>
 </div>
 <div id="non-thresholded-gene-set-enrichment-analysis" class="section level1" number="5">
 <h1><span class="header-section-number">5</span> Non-thresholded Gene set Enrichment analysis</h1>
 <p>…</p>
-<div id="choice-of-method-1" class="section level2" number="5.1">
-<h2><span class="header-section-number">5.1</span> Choice of Method</h2>
+<div id="result-1" class="section level2" number="5.1">
+<h2><span class="header-section-number">5.1</span> result</h2>
 <p>…</p>
 </div>
-<div id="annotation-resource-and-verion-1" class="section level2" number="5.2">
-<h2><span class="header-section-number">5.2</span> Annotation resource and verion</h2>
-<p>…</p>
-</div>
-<div id="result-1" class="section level2" number="5.3">
-<h2><span class="header-section-number">5.3</span> result</h2>
-<p>…</p>
-</div>
-<div id="interpretation-1" class="section level2" number="5.4">
-<h2><span class="header-section-number">5.4</span> Interpretation</h2>
+<div id="interpretation-1" class="section level2" number="5.2">
+<h2><span class="header-section-number">5.2</span> Interpretation</h2>
 <p>…</p>
 </div>
 </div>
@@ -1801,6 +1818,111 @@ message(&quot;Total significant genes: &quot;, nrow(all_sig_genes))</code></pre>
 <div id="interpretation-2" class="section level1" number="7">
 <h1><span class="header-section-number">7</span> Interpretation</h1>
 <p>…</p>
+</div>
+<div id="question" class="section level1" number="8">
+<h1><span class="header-section-number">8</span> Question</h1>
+<div id="thresholded-analysis" class="section level2" number="8.1">
+<h2><span class="header-section-number">8.1</span> Thresholded analysis</h2>
+<ol style="list-style-type: decimal">
+<li>Which method did you choose and why?</li>
+</ol>
+<ul>
+<li>…</li>
+</ul>
+<ol start="2" style="list-style-type: decimal">
+<li>What annotation data did you use and why? What version of the annotation are you using?</li>
+</ol>
+<ul>
+<li>…</li>
+</ul>
+<ol start="3" style="list-style-type: decimal">
+<li>How many genesets were returned with what thresholds?</li>
+</ol>
+<ul>
+<li>…</li>
+</ul>
+<ol start="4" style="list-style-type: decimal">
+<li>How do these results compare to using the whole list (i.e all differentially expressed genes together vs. the up-regulated and down regulated differentially expressed genes separately)?</li>
+</ol>
+<ul>
+<li>…</li>
+</ul>
+<ol start="5" style="list-style-type: decimal">
+<li>Interpretation</li>
+</ol>
+<ul>
+<li>…</li>
+</ul>
+</div>
+<div id="non-thresholded-analysis" class="section level2" number="8.2">
+<h2><span class="header-section-number">8.2</span> Non-thresholded analysis</h2>
+<ol style="list-style-type: decimal">
+<li>Which method did you choose and why?</li>
+</ol>
+<ul>
+<li>…</li>
+</ul>
+<ol start="2" style="list-style-type: decimal">
+<li>What annotation data did you use and why? What version of the annotation are you using?</li>
+</ol>
+<ul>
+<li>…</li>
+</ul>
+<ol start="3" style="list-style-type: decimal">
+<li>How many genesets were returned with what thresholds?</li>
+</ol>
+<ul>
+<li>…</li>
+</ul>
+<ol start="4" style="list-style-type: decimal">
+<li>How do these results compare to the results from the thresholded analysis in Assignment #2. Compare qualitatively. Is this a straight forward comparison? Why or why not?</li>
+</ol>
+<ul>
+<li>…</li>
+</ul>
+<ol start="5" style="list-style-type: decimal">
+<li>Interpretation</li>
+</ol>
+<ul>
+<li>…</li>
+</ul>
+</div>
+<div id="cytoscape-visualization-1" class="section level2" number="8.3">
+<h2><span class="header-section-number">8.3</span> Cytoscape visualization</h2>
+<ol style="list-style-type: decimal">
+<li>How many nodes and how many edges in the resulting map? What thresholds were used to create this map?</li>
+</ol>
+<ul>
+<li>…</li>
+</ul>
+<ol start="2" style="list-style-type: decimal">
+<li>What parameters did you use to annotate the network.</li>
+</ol>
+<ul>
+<li>…</li>
+</ul>
+<ol start="3" style="list-style-type: decimal">
+<li>What are the major themes present in this analysis? Do they fit with the model? Are there any novel pathways or themes?</li>
+</ol>
+<ul>
+<li>…</li>
+</ul>
+</div>
+<div id="interpretation-3" class="section level2" number="8.4">
+<h2><span class="header-section-number">8.4</span> Interpretation</h2>
+<ol style="list-style-type: decimal">
+<li>Do the enrichment results support conclusions or mechanism discussed in the original paper? How do these results differ from the results you got from Assignment #2 thresholded methods</li>
+</ol>
+<ul>
+<li>…</li>
+</ul>
+<ol start="2" style="list-style-type: decimal">
+<li>Can you find evidence, i.e. publications, to support some of the results that you see. How does this evidence support your result?</li>
+</ol>
+<ul>
+<li>…</li>
+</ul>
+</div>
 </div>
 <div id="references" class="section level1 unnumbered">
 <h1>References</h1>

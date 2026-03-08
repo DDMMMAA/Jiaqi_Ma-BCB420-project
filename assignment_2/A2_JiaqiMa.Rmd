@@ -184,35 +184,48 @@ all_sig_genes <- a1_de_result %>%
 # Print the sizes of the lists for the report
 cat("Total genes before thresholding:", nrow(a1_de_result), "\n")
 cat("Total significant genes: ", nrow(all_sig_genes), "\n")
+cat("Significant genes percentage: ", nrow(all_sig_genes) / nrow(a1_de_result), "\n")
 cat("Up-regulated genes: ", nrow(up_genes), "\n")
 cat("Down-regulated genes: ", nrow(down_genes), "\n")
+
+# Clean variable
+rm(p_val_adj_threshold)
 ```
-
-## Choice of Method
-
-...
-
-## Annotation resource and verion
-
-...
 
 ## result
 
-...
+```{r}
+# Run Thresholded ORA using gprofiler2
+ora_results <- gost(
+  query = list(
+    "Up_regulated" = up_genes$Gene, 
+    "Down_regulated" = down_genes$Gene, 
+    "All_Significant" = all_sig_genes$Gene
+  ),
+  organism = "hsapiens", # GSE209552 is human postmortem brain data
+  ordered_query = FALSE, # CRITICAL: Must be FALSE for strict thresholded ORA
+  significant = TRUE,    # Only return statistically significant pathways
+  exclude_iea = TRUE,    # Exclude Inferred from Electronic Annotation (high confidence only)
+  correction_method = "fdr", # False Discovery Rate (Benjamini-Hochberg)
+  sources = c("GO:BP")   # Restrict to Gene Ontology: Biological Process for interpretability
+)
+
+# Extract and print the number of significant genesets returned for each list
+cat("Significant GO:BP pathways for Up-regulated genes:", 
+    sum(ora_results$result$query == "Up_regulated"), "\n")
+
+cat("Significant GO:BP pathways for Down-regulated genes:", 
+    sum(ora_results$result$query == "Down_regulated"), "\n")
+
+cat("Significant GO:BP pathways for All Significant genes:", 
+    sum(ora_results$result$query == "All_Significant"), "\n")
+```
 
 ## Interpretation
 
 ...
 
 # Non-thresholded Gene set Enrichment analysis
-
-...
-
-## Choice of Method
-
-...
-
-## Annotation resource and verion
 
 ...
 
@@ -231,5 +244,75 @@ cat("Down-regulated genes: ", nrow(down_genes), "\n")
 # Interpretation
 
 ...
+
+# Question
+
+## Thresholded analysis
+
+1. Which method did you choose and why?
+
+-    ...
+
+2. What annotation data did you use and why? What version of the annotation are you using?
+
+-    ...
+
+3. How many genesets were returned with what thresholds?
+
+-    ...
+
+4. How do these results compare to using the whole list (i.e all differentially expressed genes together vs. the up-regulated and down regulated differentially expressed genes separately)?
+
+-    ...
+
+5. Interpretation
+
+-    ...
+
+## Non-thresholded analysis
+
+1. Which method did you choose and why?
+
+-    ...
+
+2. What annotation data did you use and why? What version of the annotation are you using?
+
+-    ...
+
+3. How many genesets were returned with what thresholds?
+
+-    ...
+
+4. How do these results compare to the results from the thresholded analysis in Assignment #2. Compare qualitatively. Is this a straight forward comparison? Why or why not?
+
+-    ...
+
+5. Interpretation
+
+-    ...
+
+## Cytoscape visualization
+
+1. How many nodes and how many edges in the resulting map? What thresholds were used to create this map?
+
+-    ...
+
+2. What parameters did you use to annotate the network.
+
+-    ...
+
+3. What are the major themes present in this analysis? Do they fit with the model? Are there any novel pathways or themes?
+
+-    ...
+
+## Interpretation
+
+1. Do the enrichment results support conclusions or mechanism discussed in the original paper? How do these results differ from the results you got from Assignment #2 thresholded methods
+
+-    ...
+
+2. Can you find evidence, i.e. publications, to support some of the results that you see. How does this evidence support your result?
+
+-    ...
 
 # References {#references}
