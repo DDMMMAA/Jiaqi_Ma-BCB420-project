@@ -45,12 +45,17 @@ if (!requireNamespace("GSA", quietly = TRUE))
   install.packages("GSA")
 if (!requireNamespace("tibble", quietly = TRUE))
   install.packages("tibble")
+if (!requireNamespace("knitr", quietly = TRUE))
+  install.packages("knitr")
+if (!requireNamespace("dplyr", quietly = TRUE))
+  install.packages("dplyr")
 
 # Attach
 library(dplyr)
 library(tibble)
 library(gprofiler2)
 library(GSA)
+library(knitr)
 ```
 
 # Introduction to Assignment #1
@@ -153,13 +158,15 @@ a1_de_result <- a1_de_result %>%
 head(a1_de_result)
 ```
 
-# Thresholded over-representation analysis
+# Thresholded over-representation analysis (ORA)
 
 Consult Barder lab's tutorial on [Run g:profiler from R](https://risserlin.github.io/CBW_pathways_workshop_R_notebooks/run-gprofiler-from-r.html) and `gprofiler2` package [vignettes](https://cran.r-project.org/web/packages/gprofiler2/vignettes/gprofiler2.html)
 
 ## DEGs thresholding and split
 
 I will use the same threshold criteria utilized in [Garze et al, 2023](https://doi.org/10.1016/j.celrep.2023.113395) and split DEGs to up & down regulated genes.
+
+**Note** Up-regulated means up regulated in `control` group compare to `tbi` group.
 
 ```{r}
 # Define threshold criteria
@@ -185,14 +192,20 @@ all_sig_genes <- a1_de_result %>%
 cat("Total genes before thresholding:", nrow(a1_de_result), "\n")
 cat("Total significant genes: ", nrow(all_sig_genes), "\n")
 cat("Significant genes percentage: ", nrow(all_sig_genes) / nrow(a1_de_result), "\n")
-cat("Up-regulated genes: ", nrow(up_genes), "\n")
 cat("Down-regulated genes: ", nrow(down_genes), "\n")
+cat("Up-regulated genes: ", nrow(up_genes), "\n")
 
 # Clean variable
 rm(p_val_adj_threshold)
 ```
 
-## result
+## Result
+
+`g:profiler`([Kolberg et al, 2023](https://doi-org.myaccess.library.utoronto.ca/10.1093/nar/gkad347)), `g:GOSt` was utilized to conduct ORA with `Benjamini-Hochberg` to correct p value. The `R` interface of `g:profiler` is provided as `gprofiler2` package ([CRAN, gprofiler2](https://doi.org/10.32614/CRAN.package.gprofiler2)). I choice this method because this is the one taught in BCB240. The original paper ([Garze et al, 2023](https://doi.org/10.1016/j.celrep.2023.113395)) was using `clusterProfiler` ([Xu et al, 2024](https://doi.org/10.1038/s41596-024-01020-z)), but they didn't specify the method of choice to correct p value.
+
+The choice of annotation data is `Gene ontology` ([The Gene Ontology Consortium, 2026](https://doi-org.myaccess.library.utoronto.ca/10.1093/nar/gkaf1292)). Specifically, annotate by `GO:BP` aligned with original paper ([Garze et al, 2023](https://doi.org/10.1016/j.celrep.2023.113395)).
+
+The version of `gprofiler2` package is `0.2.4`; The version of annotation data is `e113_eg59_p19_6be52918`.
 
 ```{r}
 # Run Thresholded ORA using gprofiler2
@@ -203,7 +216,7 @@ ora_results <- gost(
     "All_Significant" = all_sig_genes$Gene
   ),
   organism = "hsapiens", # GSE209552 is human postmortem brain data
-  ordered_query = FALSE, # CRITICAL: Must be FALSE for strict thresholded ORA
+  ordered_query = FALSE, # FALSE for strict thresholded ORA
   significant = TRUE,    # Only return statistically significant pathways
   exclude_iea = TRUE,    # Exclude Inferred from Electronic Annotation (high confidence only)
   correction_method = "fdr", # False Discovery Rate (Benjamini-Hochberg)
@@ -211,19 +224,105 @@ ora_results <- gost(
 )
 
 # Extract and print the number of significant genesets returned for each list
-cat("Significant GO:BP pathways for Up-regulated genes:", 
-    sum(ora_results$result$query == "Up_regulated"), "\n")
-
-cat("Significant GO:BP pathways for Down-regulated genes:", 
-    sum(ora_results$result$query == "Down_regulated"), "\n")
-
 cat("Significant GO:BP pathways for All Significant genes:", 
     sum(ora_results$result$query == "All_Significant"), "\n")
+cat("Significant GO:BP pathways for Down-regulated genes:", 
+    sum(ora_results$result$query == "Down_regulated"), "\n")
+cat("Significant GO:BP pathways for Up-regulated genes:", 
+    sum(ora_results$result$query == "Up_regulated"), "\n")
 ```
+
+`496` significant pathway/geneset were identified within in all significant genes; `112` significant pathway/geneset were identified within up-regulated genes; `579` significant pathway/geneset were identified within down-regulated genes; Note the number of significant pathway identified in down-regulated genes is more than all significant genes.
+
+```{r}
+# Visualize by Manhattan plot
+gostplot(ora_results, capped = FALSE, interactive = FALSE)
+```
+
+**Figure 2:** Manhattan plot of `GP:BP` result of all significant, up-regulated, and down-regulated genes. The top panel is all significant genes; The middle panel is all down-regulated significant genes; The bottom panel is all up-regulated significant genes. The Y-axis indicate `-log10` transformed adjusted p value; The X-axis indicate each enriched pathway/gene set.
+
+```{r}
+# Extract the main results dataframe
+gost_res_df <- ora_results$result
+
+# Define the exact columns you want to keep (avoiding list columns)
+keep_cols <- c("term_id", "term_name", "p_value", "intersection_size")
+
+# --- 1. Top 10 All Significant Pathways ---
+# Filter rows for "All_Significant" and keep only the safe columns
+all_subset <- gost_res_df[gost_res_df$query == "All_Significant", keep_cols]
+
+# Use head() to grab the top 10
+all_top10 <- head(all_subset, 10)
+
+# Format p-value to scientific notation
+all_top10$p_value <- formatC(all_top10$p_value, format = "e", digits = 2)
+
+# Render the table
+kable(all_top10, 
+      row.names = FALSE, 
+      caption = "Table 1: Top 10 All Significant GO:BP Pathways")
+
+# --- 2. Top 10 Down-regulated Pathways ---
+# Filter rows for "Down_regulated" and keep only the safe columns
+down_subset <- gost_res_df[gost_res_df$query == "Down_regulated", keep_cols]
+
+# Use head() to grab the top 10
+down_top10 <- head(down_subset, 10)
+
+down_top10$p_value <- formatC(down_top10$p_value, format = "e", digits = 2)
+
+# Render the table
+kable(down_top10, row.names = FALSE, caption = "Table 2: Top 10 Significantly Down-regulated GO:BP Pathways")
+
+# --- 3. Top 10 Up-regulated Pathways ---
+# Filter rows for "Up_regulated" and keep only the safe columns
+up_subset <- gost_res_df[gost_res_df$query == "Up_regulated", keep_cols]
+
+# Use head() to grab the top 10 (gprofiler2 pre-sorts by p-value)
+up_top10 <- head(up_subset, 10)
+
+up_top10$p_value <- formatC(up_top10$p_value, format = "e", digits = 2)
+
+# Render the table
+kable(up_top10, row.names = FALSE, caption = "Table 3: Top 10 Significantly Up-regulated GO:BP Pathways")
+
+# Clean variable
+rm(gost_res_df)
+rm(keep_cols)
+rm(all_subset)
+rm(all_top10)
+rm(down_subset)
+rm(down_top10)
+rm(up_subset)
+rm(up_top10)
+```
+
+The pathways identified within all significant and down-regulated genes were generally cellular metabolism. Whereas the pathways identified within up-regulated genes were neuron specific, concentrate at projection, synapse assembly and transmission. Also, the pathway identified in all significant and down-regulated genes were more significant, indicate by lower `p-value` and greater `intersection_size`.
 
 ## Interpretation
 
-...
+**Critical note:**Because of how I assign identity parameter in `Seurat::FindMarkers()` in assignment #1.
+
+```         
+Condition_DE_list <- FindMarkers(combined_seurat_filtered, ident.1 = "control", ident.2 = "tbi", group.by = "Condition")
+```
+
+The `up-regulation` meant `up-regulated in control`.
+
+### Up-regulated (Higher in Control/Lower in TBI)
+
+Pathways identified were concentrated in neuron-specific functions, like synaptic assembly and transmission. This enrichment might simply reflect control group's heather synapse activity state (i.e., damaged synaptic function in TBI group). The original paper ([Garze et al, 2023](https://doi.org/10.1016/j.celrep.2023.113395)) also captured this signal and further identified this signal was originated from `excitatory neurons`.
+
+### Down-regulated (Lower in Control/Higher in TBI)
+
+Pathways identified were concentrated in general terms like cellular process and metabolic function. While these terms exhibit statistically extremely low `p_value` and massive intersection sizes compare with Up-regulated gene, it's not as biologically relevant as specific term like synapse assembly enriched in up-regulated genes. The statistical significance of those general terms are likely result from their position at the top of the GO hierarchy rather than an indicator of high biological relevance. Thus the interpretation can be ambiguous. 
+
+While the data safely concludes that TBI alters baseline metabolic transcription, interpreting this as `hyperactive` or `healthy` metabolism is conflicts with literature ([Oft et al, 2024](https://doi-org.myaccess.library.utoronto.ca/10.1186/s12974-024-03177-6), [Haria et al, 2025](https://doi-org.myaccess.library.utoronto.ca/10.1016/j.bbr.2025.115697), [Demers-Marcil & Coles, 2022](https://doi-org.myaccess.library.utoronto.ca/10.1097/ACO.0000000000001183)) that characterizes TBI by profound metabolic failure. One explanation for this higher metabolic transcript observed in TBI is it's compensatory response that brain is trying to recover from existing metabolic failure by transcribe more metabolic gene.
+
+### Compearsion between directional regulated genes and all DEGs
+
+The top enriched pathways in the all DEGs analysis were very similar with the down-regulated list, heavily dominated by broad, top-level GO parent terms like `cellular process` and `metabolic process`. This similarity is a direct statistical artifact of ranking methodology that only rank based on `p value`. Consequently, the top pathway identified from all DEGs were occupied by statistically significant down-regulated pathway whereas more specific, biologically informative pathway captured in the up-regulated list are entirely eclipsed in the combined analysis. Thus it's not sufficient to conclude `metabolic activity` is more effected by TBI than `synaptic activity`.
 
 # Non-thresholded Gene set Enrichment analysis
 
@@ -249,70 +348,70 @@ cat("Significant GO:BP pathways for All Significant genes:",
 
 ## Thresholded analysis
 
-1. Which method did you choose and why?
+1.  Which method did you choose and why?
 
--    ...
+-   ...
 
-2. What annotation data did you use and why? What version of the annotation are you using?
+2.  What annotation data did you use and why? What version of the annotation are you using?
 
--    ...
+-   ...
 
-3. How many genesets were returned with what thresholds?
+3.  How many genesets were returned with what thresholds?
 
--    ...
+-   ...
 
-4. How do these results compare to using the whole list (i.e all differentially expressed genes together vs. the up-regulated and down regulated differentially expressed genes separately)?
+4.  How do these results compare to using the whole list (i.e all differentially expressed genes together vs. the up-regulated and down regulated differentially expressed genes separately)?
 
--    ...
+-   ...
 
-5. Interpretation
+5.  Interpretation
 
--    ...
+-   ...
 
 ## Non-thresholded analysis
 
-1. Which method did you choose and why?
+1.  Which method did you choose and why?
 
--    ...
+-   ...
 
-2. What annotation data did you use and why? What version of the annotation are you using?
+2.  What annotation data did you use and why? What version of the annotation are you using?
 
--    ...
+-   ...
 
-3. How many genesets were returned with what thresholds?
+3.  How many genesets were returned with what thresholds?
 
--    ...
+-   ...
 
-4. How do these results compare to the results from the thresholded analysis in Assignment #2. Compare qualitatively. Is this a straight forward comparison? Why or why not?
+4.  How do these results compare to the results from the thresholded analysis in Assignment #2. Compare qualitatively. Is this a straight forward comparison? Why or why not?
 
--    ...
+-   ...
 
-5. Interpretation
+5.  Interpretation
 
--    ...
+-   ...
 
 ## Cytoscape visualization
 
-1. How many nodes and how many edges in the resulting map? What thresholds were used to create this map?
+1.  How many nodes and how many edges in the resulting map? What thresholds were used to create this map?
 
--    ...
+-   ...
 
-2. What parameters did you use to annotate the network.
+2.  What parameters did you use to annotate the network.
 
--    ...
+-   ...
 
-3. What are the major themes present in this analysis? Do they fit with the model? Are there any novel pathways or themes?
+3.  What are the major themes present in this analysis? Do they fit with the model? Are there any novel pathways or themes?
 
--    ...
+-   ...
 
 ## Interpretation
 
-1. Do the enrichment results support conclusions or mechanism discussed in the original paper? How do these results differ from the results you got from Assignment #2 thresholded methods
+1.  Do the enrichment results support conclusions or mechanism discussed in the original paper? How do these results differ from the results you got from Assignment #2 thresholded methods
 
--    ...
+-   ...
 
-2. Can you find evidence, i.e. publications, to support some of the results that you see. How does this evidence support your result?
+2.  Can you find evidence, i.e. publications, to support some of the results that you see. How does this evidence support your result?
 
--    ...
+-   ...
 
 # References {#references}
