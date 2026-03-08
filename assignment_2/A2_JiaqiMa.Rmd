@@ -35,12 +35,23 @@ knitr::opts_chunk$set(
                       knitr.kable.max_rows = 5)
 ```
 
-# Attach packages
+# Packages setup
 
 ```{r}
-library(dplyr)
-```
+# Download
+if (!requireNamespace("gprofiler2", quietly = TRUE))
+  install.packages("gprofiler2")
+if (!requireNamespace("GSA", quietly = TRUE))
+  install.packages("GSA")
+if (!requireNamespace("tibble", quietly = TRUE))
+  install.packages("tibble")
 
+# Attach
+library(dplyr)
+library(tibble)
+library(gprofiler2)
+library(GSA)
+```
 
 # Introduction to Assignment #1
 
@@ -144,7 +155,38 @@ head(a1_de_result)
 
 # Thresholded over-representation analysis
 
-...
+Consult Barder lab's tutorial on [Run g:profiler from R](https://risserlin.github.io/CBW_pathways_workshop_R_notebooks/run-gprofiler-from-r.html) and `gprofiler2` package [vignettes](https://cran.r-project.org/web/packages/gprofiler2/vignettes/gprofiler2.html)
+
+## DEGs thresholding and split
+
+I will use the same threshold criteria utilized in [Garze et al, 2023](https://doi.org/10.1016/j.celrep.2023.113395) and split DEGs to up & down regulated genes.
+
+```{r}
+# Define threshold criteria
+p_val_adj_threshold <- 0.01
+
+# split
+# 1. Up-regulated genes
+up_genes <- a1_de_result %>%
+  rownames_to_column(var = "Gene") %>%
+  filter(p_val_adj < p_val_adj_threshold & avg_log2FC > 0)
+
+# 2. Down-regulated genes
+down_genes <- a1_de_result %>%
+  rownames_to_column(var = "Gene") %>%
+  filter(p_val_adj < p_val_adj_threshold & avg_log2FC < 0)
+
+# 3. All significant genes (for comparison as requested by the rubric)
+all_sig_genes <- a1_de_result %>%
+  rownames_to_column(var = "Gene") %>%
+  filter(p_val_adj < p_val_adj_threshold)
+
+# Print the sizes of the lists for the report
+cat("Total genes before thresholding:", nrow(a1_de_result), "\n")
+cat("Total significant genes: ", nrow(all_sig_genes), "\n")
+cat("Up-regulated genes: ", nrow(up_genes), "\n")
+cat("Down-regulated genes: ", nrow(down_genes), "\n")
+```
 
 ## Choice of Method
 

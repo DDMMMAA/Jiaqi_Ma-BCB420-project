@@ -916,9 +916,6 @@ message("Number of genes with raw p_val < 0.05: ", num_pval_05)
 message("Number of genes with p_val_adj < 0.05: ", num_padj_05)
 message("Number of genes with p_val_adj < 0.01: ", num_padj_01)
 
-# apply threshold
-Condition_DE_list <- subset(Condition_DE_list, p_val_adj < 0.01)
-
 # Examin DE LIST
 head(Condition_DE_list)
 ```

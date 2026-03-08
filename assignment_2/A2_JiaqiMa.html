@@ -11,7 +11,7 @@
 
 <meta name="author" content="Jiaqi Ma" />
 
-<meta name="date" content="2026-03-07" />
+<meta name="date" content="2026-03-08" />
 
 <title>Assignment #2</title>
 
@@ -1590,7 +1590,7 @@ border-radius: 0px;
 
 <h1 class="title toc-ignore">Assignment #2</h1>
 <h4 class="author">Jiaqi Ma</h4>
-<h4 class="date">2026-03-07</h4>
+<h4 class="date">2026-03-08</h4>
 
 </div>
 
@@ -1604,9 +1604,21 @@ font-size: 14px;
 font-style: italic;
 }
 </style>
-<div id="attach-packages" class="section level1" number="1">
-<h1><span class="header-section-number">1</span> Attach packages</h1>
-<pre class="r"><code>library(dplyr)</code></pre>
+<div id="packages-setup" class="section level1" number="1">
+<h1><span class="header-section-number">1</span> Packages setup</h1>
+<pre class="r"><code># Download
+if (!requireNamespace(&quot;gprofiler2&quot;, quietly = TRUE))
+  install.packages(&quot;gprofiler2&quot;)
+if (!requireNamespace(&quot;GSA&quot;, quietly = TRUE))
+  install.packages(&quot;GSA&quot;)
+if (!requireNamespace(&quot;tibble&quot;, quietly = TRUE))
+  install.packages(&quot;tibble&quot;)
+
+# Attach
+library(dplyr)
+library(tibble)
+library(gprofiler2)
+library(GSA)</code></pre>
 </div>
 <div id="introduction-to-assignment-1" class="section level1" number="2">
 <h1><span class="header-section-number">2</span> Introduction to Assignment #1</h1>
@@ -1717,21 +1729,48 @@ head(a1_de_result)</code></pre>
 </div>
 <div id="thresholded-over-representation-analysis" class="section level1" number="4">
 <h1><span class="header-section-number">4</span> Thresholded over-representation analysis</h1>
-<p>…</p>
-<div id="choice-of-method" class="section level2" number="4.1">
-<h2><span class="header-section-number">4.1</span> Choice of Method</h2>
+<p>Consult Barder lab’s tutorial on <a href="https://risserlin.github.io/CBW_pathways_workshop_R_notebooks/run-gprofiler-from-r.html">Run g:profiler from R</a> and <code>gprofiler2</code> package <a href="https://cran.r-project.org/web/packages/gprofiler2/vignettes/gprofiler2.html">vignettes</a></p>
+<div id="degs-thresholding-and-split" class="section level2" number="4.1">
+<h2><span class="header-section-number">4.1</span> DEGs thresholding and split</h2>
+<p>I will use the same threshold criteria utilized in <a href="https://doi.org/10.1016/j.celrep.2023.113395">Garze et al, 2023</a> and split DEGs to up &amp; down regulated genes.</p>
+<pre class="r"><code># Define threshold criteria
+p_val_adj_threshold &lt;- 0.01
+
+# split
+# 1. Up-regulated genes
+up_genes &lt;- a1_de_result %&gt;%
+  rownames_to_column(var = &quot;Gene&quot;) %&gt;%
+  filter(p_val_adj &lt; p_val_adj_threshold &amp; avg_log2FC &gt; 0)
+
+# 2. Down-regulated genes
+down_genes &lt;- a1_de_result %&gt;%
+  rownames_to_column(var = &quot;Gene&quot;) %&gt;%
+  filter(p_val_adj &lt; p_val_adj_threshold &amp; avg_log2FC &lt; 0)
+
+# 3. All significant genes (for comparison as requested by the rubric)
+all_sig_genes &lt;- a1_de_result %&gt;%
+  rownames_to_column(var = &quot;Gene&quot;) %&gt;%
+  filter(p_val_adj &lt; p_val_adj_threshold)
+
+# Print the sizes of the lists for the report
+message(&quot;Up-regulated genes: &quot;, nrow(up_genes))
+message(&quot;Down-regulated genes: &quot;, nrow(down_genes))
+message(&quot;Total significant genes: &quot;, nrow(all_sig_genes))</code></pre>
+</div>
+<div id="choice-of-method" class="section level2" number="4.2">
+<h2><span class="header-section-number">4.2</span> Choice of Method</h2>
 <p>…</p>
 </div>
-<div id="annotation-resource-and-verion" class="section level2" number="4.2">
-<h2><span class="header-section-number">4.2</span> Annotation resource and verion</h2>
+<div id="annotation-resource-and-verion" class="section level2" number="4.3">
+<h2><span class="header-section-number">4.3</span> Annotation resource and verion</h2>
 <p>…</p>
 </div>
-<div id="result" class="section level2" number="4.3">
-<h2><span class="header-section-number">4.3</span> result</h2>
+<div id="result" class="section level2" number="4.4">
+<h2><span class="header-section-number">4.4</span> result</h2>
 <p>…</p>
 </div>
-<div id="interpretation" class="section level2" number="4.4">
-<h2><span class="header-section-number">4.4</span> Interpretation</h2>
+<div id="interpretation" class="section level2" number="4.5">
+<h2><span class="header-section-number">4.5</span> Interpretation</h2>
 <p>…</p>
 </div>
 </div>
