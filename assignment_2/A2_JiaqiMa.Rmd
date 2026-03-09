@@ -65,12 +65,15 @@ library(HGNChelper)
 
 ## Dataset introduction
 
--   The choice of dataset is `GSE209552`, published by [Garze et al, 2023](https://doi.org/10.1016/j.celrep.2023.113395)
+-   The choice of dataset is `GSE209552`, published by [Garza et al, 2023](https://doi.org/10.1016/j.celrep.2023.113395)
 -   `GSE209552` contain both `snRNA-seq` and `bulk RNA-seq` data
 -   Control: non-neuronal death postmortem brain
 -   Treatment: Traumatic brain injury (TBI)
+-   Note there exist and only exist two female sample (TBI 19, TBI 20) in TBI group
 
 ![Figure 1: Data overview (Garza et al, 2023; Supplemental table 1)](figure/Data_description.png)
+
+\n
 
 ## Assignment #1 result introduction
 
@@ -167,7 +170,7 @@ Consult Barder lab's tutorial on [Run g:profiler from R](https://risserlin.githu
 
 ## DEGs thresholding and split
 
-I will use the same threshold criteria utilized in [Garze et al, 2023](https://doi.org/10.1016/j.celrep.2023.113395) and split DEGs to up & down regulated genes.
+I will use the same threshold criteria utilized in [Garza et al, 2023](https://doi.org/10.1016/j.celrep.2023.113395) and split DEGs to up & down regulated genes.
 
 **Note** Up-regulated means up regulated in `control` group compare to `tbi` group.
 
@@ -204,9 +207,9 @@ rm(p_val_adj_threshold)
 
 ## Result {#ORA-result}
 
-`g:profiler`([Kolberg et al, 2023](https://doi-org.myaccess.library.utoronto.ca/10.1093/nar/gkad347)), `g:GOSt` was utilized to conduct ORA with `Benjamini-Hochberg` to correct p value. The `R` interface of `g:profiler` is provided as `gprofiler2` package ([CRAN, gprofiler2](https://doi.org/10.32614/CRAN.package.gprofiler2)). I choice this method because this is the one taught in BCB240. The original paper ([Garze et al, 2023](https://doi.org/10.1016/j.celrep.2023.113395)) was using `clusterProfiler` ([Xu et al, 2024](https://doi.org/10.1038/s41596-024-01020-z)), but they didn't specify the method of choice to correct p value.
+`g:profiler`([Kolberg et al, 2023](https://doi-org.myaccess.library.utoronto.ca/10.1093/nar/gkad347)), `g:GOSt` was utilized to conduct ORA with `Benjamini-Hochberg` to correct p value. The `R` interface of `g:profiler` is provided as `gprofiler2` package ([CRAN, gprofiler2](https://doi.org/10.32614/CRAN.package.gprofiler2)). I choice this method because this is the one taught in BCB240. The original paper ([Garza et al, 2023](https://doi.org/10.1016/j.celrep.2023.113395)) was using `clusterProfiler` ([Xu et al, 2024](https://doi.org/10.1038/s41596-024-01020-z)), but they didn't specify the method of choice to correct p value.
 
-The choice of annotation data is `Gene ontology` ([The Gene Ontology Consortium, 2026](https://doi-org.myaccess.library.utoronto.ca/10.1093/nar/gkaf1292)). Specifically, annotate by `GO:BP` aligned with original paper ([Garze et al, 2023](https://doi.org/10.1016/j.celrep.2023.113395)).
+The choice of annotation data is `Gene ontology` ([The Gene Ontology Consortium, 2026](https://doi-org.myaccess.library.utoronto.ca/10.1093/nar/gkaf1292)). Specifically, annotate by `GO:BP` aligned with original paper ([Garza et al, 2023](https://doi.org/10.1016/j.celrep.2023.113395)).
 
 The version of `gprofiler2` package is `0.2.4`; The version of annotation data is `e113_eg59_p19_6be52918`.
 
@@ -315,7 +318,7 @@ The `up-regulation` meant `up-regulated in control`.
 
 ### Up-regulated (Higher in Control/Lower in TBI)
 
-Pathways identified were concentrated in neuron-specific functions, like synaptic assembly and transmission. This enrichment might simply reflect control group's heather synapse activity state (i.e., damaged synaptic function in TBI group). The original paper ([Garze et al, 2023](https://doi.org/10.1016/j.celrep.2023.113395)) also captured this signal and further identified this signal was originated from `excitatory neurons`.
+Pathways identified were concentrated in neuron-specific functions, like synaptic assembly and transmission. This enrichment might simply reflect control group's heather synapse activity state (i.e., damaged synaptic function in TBI group). The original paper ([Garza et al, 2023](https://doi.org/10.1016/j.celrep.2023.113395)) also captured this signal and further identified this signal was originated from `excitatory neurons`.
 
 ### Down-regulated (Lower in Control/Higher in TBI)
 
@@ -422,17 +425,25 @@ Follow barder's lab [Module 2 lab - GSEA tutorial](https://baderlab.github.io/CB
 
 ![Figure 3: Screenshot of GSEA parameters](figure/gsea_param.png)
 
+\n
+
 ## Result {#GSEA-Result}
 
 ![Figure 4: Screenshot of GSEA result overview. The top chunk (na_pos) denote up-regulation in control; The bottum chunk (na_neg) denote down-regulation in control](figure/GSEA_overview.png)
 
+\n
+
 `5573 / 18971` pathway/geneset were remained from geneset size filters (min=15, max=500); `1243 / 5573` pathway/geneset were enriched in control; `4330 / 5573` pathway/geneset were enriched in TBI.
 
-![Figure 5: Screenshot of Top 20 Down-regulated(low in control) GSEA result. Each row is a pathway/geneste; Column denote associated statistics](figure/GSEA_downreg_table.png)
+![Figure 5: Screenshot of Top 20 Up-regulated(high in control) GSEA result. Each row is a pathway/geneste; Column denote associated statistics](figure/GSEA_upreg_table.png)
+
+\n
 
 The top 20 down-regulated pathways can be generally categorized into 4 category.1) Stimuli and Sensory Perception; 2) Olfactory and smell function; 3) Ion metabolism and function; 4) Motile cilium and sperm motility.
 
-![Figure 6: Screenshot of Top 20 Up-regulated(high in control) GSEA result. Each row is a pathway/geneste; Column denote associated statistics](figure/GSEA_downreg_table.png)
+![Figure 6: Screenshot of Top 20 Down-regulated(low in control) GSEA result. Each row is a pathway/geneste; Column denote associated statistics](figure/GSEA_downreg_table.png)
+
+\n
 
 The top 20 up-regulated pathways is more uniform, except the top 1 pathway involved in inflammation and immune response, the rest of 19 were all protein synthesis.
 
@@ -442,15 +453,33 @@ Just comparing the number of pathway identified, `GSEA` consist with `ORA`, both
 
 ### Up-regulated (Higher in Control/Lower in TBI)
 
-...
+These pathways represent the specialized neurological architecture that is functionally suppressed or physically destroyed by the traumatic injury. The loss of `sensory perception`, `olfactory`, and `ion function` pathways indicates a targeted collapse of synaptic signaling networks, likely attributed to neuronal cell. `Olfactory dysregulation/impairment` specifically, has been reported as TBI hallmarks in literature([Liu et al, 2023](https://doi-org.myaccess.library.utoronto.ca/10.1016/j.bbi.2023.08.004), [Luca et al, 2023](https://doi.org/10.3389/fneur.2023.1193406), [Xydakis et al, 2015](https://doi.org/10.1212/WNL.0000000000001475)).
+
+Notably, the suppression of `motile cilium` and `sperm motility` initially presented as a potential clinical confounding artifact, given that there exist and only exist two female sample (TBI 19, TBI 20) in TBI group. To verify whether this was a sex-driven pathway, I re-run the `DEGs analysis` in assignment #1 and `GSEA` by excluding the female samples.
+
+![Figure 7: Screenshot of Top 20 Up-regulated(high in control) GSEA result without female sample. Each row is a pathway/geneste; Column denote associated statistics; The red line highlight sperm motility pathway](figure/GSEA_upreg_nofemale_table.png)
+
+\n
+
+The fact that `sperm motility` still remained as top pathway without female sample confirmed it's not sex-driven pathway. Surprisingly, literature has reported ependymal cilia dysregulation and decrease of Cerebral Spinal Fluid flow post-tbi([Xing et al, 2022](https://doi-org.myaccess.library.utoronto.ca/10.3389/fgene.2022.861428), [Xiong et al, 2014](https://doi-org.myaccess.library.utoronto.ca/10.1089/neu.2013.3110), [Gupta et al, 2024](https://doi.org/10.1101/2024.11.19.623875), [Nelles & Hazrati, 2023](https://doi.org/10.3389/fncel.2023.1216420)). Therefore, considering the morphological and functional homology between sperm and ependymal's cilia, this enriched pathway actually captures the mechanical shearing and functional impairment of ependymal cilia in the injured brain.
 
 ### Down-regulated (Lower in Control/Higher in TBI)
 
-...
+The top hit—TNF-alpha signaling via NF-kB—indicates is a well studied pathway in TBI indicate neuroinflammatory state. Multiple studies have characterized its activation post-tbi ([Zhang et al, 2025](https://doi-org.myaccess.library.utoronto.ca/10.1007/s00018-025-05796-5), [Longhi et al, 2013](https://doi-org.myaccess.library.utoronto.ca/10.1038/jcbfm.2013.65), [Mettand et al, 2018](https://doi-org.myaccess.library.utoronto.ca/10.1096/fj.201700826R)), with recent literature specifically identifying reactive astrocytes as the primary cell type driving this NF-kB overexpression ([Hein et al, 2026](https://doi.org/10.1038/s41467-026-70304-7)). However, the biological implication of the overwhelming dominance of general protein synthesis and translation pathways in the remainder of the top 20 results remains unclear. Because this enrichment is broad rather than restricted to a specific protein subset, it suggests a global, non-specific enhancement of the translational machinery. One hypothesis is that this global enhanced translation/protein synthesis reflects a compensatory cellular stress response triggered by injury-induced metabolic failure.
 
 ### Compare with Thresholded analysis (ORA)
 
-...
+GSEA yields highly specific, functional pathways, whereas ORA produces broad, generic biological terms.
+
+-    Characterizing Neurological Damage (Suppressed in TBI) ORA identified broad, generic structural terms like "synaptic signaling" and "cell projection organization." In contrast, GSEA isolated specific functional deficits, pinpointing the targeted collapse of olfactory and ion transport networks. Uniquely, GSEA also captured the mechanical shearing of ependymal motile cilia (annotated via structural homology as "sperm motility") , a critical pathology missed in ORA.
+
+-    Characterizing the TBI Stress Response (Induced in TBI) ORA characterized the cellular stress response using highly ambiguous, top-level categories like "primary metabolic process," failing to distinguish between healthy basal metabolism and a pathological crisis. Conversely, GSEA explicitly defined the exact nature of the cellular crisis: a severe, astrocyte-driven neuroinflammatory cascade (TNF-alpha signaling via NF-kB) paired with potentially stress-induced global translation enhancement.
+
+However, there isn't a straight forward comparison because there exist multiple different input parameters (Thresholded v.s. non-thresholded; GO annotation v.s. Bader's lab collection; Non-restricted geneset v.s. Restricted geneset) and most importantly, algorithmic difference (gprofiler2 v.s.GSEA JAVA).
+
+Instead of yielding comparable, overlapping pathways, the methods produced entirely different classes of biological terms. ORA’s results were dominated by macroscopic, high level terms (e.g., "cellular process"). In contrast, GSEA output microscopic, functionally specific child terms (e.g., "TNF-alpha signaling" and "motile cilia").
+
+Therefore, the comparison is essentially interpreted. It is not an evaluation of two equivalent computational metrics, but rather attempting to map a vague, generalized outline of cellular stress (ORA) against a specific TBI pathology (GSEA).
 
 # Cytoscape Visualization
 
@@ -472,7 +501,7 @@ Just comparing the number of pathway identified, `GSEA` consist with `ORA`, both
 
 2.  What annotation data did you use and why? What version of the annotation are you using?
 
--   I choose `Gene Ontology` because this is the one focused in lecture. More specifically `GO:BP` because the original paper ([Garze et al, 2023](https://doi.org/10.1016/j.celrep.2023.113395)) examined `GO:BP`. The version of annotation data is `e113_eg59_p19_6be52918`
+-   I choose `Gene Ontology` because this is the one focused in lecture. More specifically `GO:BP` because the original paper ([Garza et al, 2023](https://doi.org/10.1016/j.celrep.2023.113395)) examined `GO:BP`. The version of annotation data is `e113_eg59_p19_6be52918`
 
 -   Link to section: [Thresholded over-representation analysis (ORA), Result](#ORA-result)
 
