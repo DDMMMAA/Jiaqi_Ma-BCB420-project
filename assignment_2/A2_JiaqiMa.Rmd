@@ -422,11 +422,33 @@ Follow barder's lab [Module 2 lab - GSEA tutorial](https://baderlab.github.io/CB
 
 ![Figure 3: Screenshot of GSEA parameters](figure/gsea_param.png)
 
-## result
+## Result {#GSEA-Result}
+
+![Figure 4: Screenshot of GSEA result overview. The top chunk (na_pos) denote up-regulation in control; The bottum chunk (na_neg) denote down-regulation in control](figure/GSEA_overview.png)
+
+`5573 / 18971` pathway/geneset were remained from geneset size filters (min=15, max=500); `1243 / 5573` pathway/geneset were enriched in control; `4330 / 5573` pathway/geneset were enriched in TBI.
+
+![Figure 5: Screenshot of Top 20 Down-regulated(low in control) GSEA result. Each row is a pathway/geneste; Column denote associated statistics](figure/GSEA_downreg_table.png)
+
+The top 20 down-regulated pathways can be generally categorized into 4 category.1) Stimuli and Sensory Perception; 2) Olfactory and smell function; 3) Ion metabolism and function; 4) Motile cilium and sperm motility.
+
+![Figure 6: Screenshot of Top 20 Up-regulated(high in control) GSEA result. Each row is a pathway/geneste; Column denote associated statistics](figure/GSEA_downreg_table.png)
+
+The top 20 up-regulated pathways is more uniform, except the top 1 pathway involved in inflammation and immune response, the rest of 19 were all protein synthesis.
+
+## Interpretation {#GSEA-Interpretation}
+
+Just comparing the number of pathway identified, `GSEA` consist with `ORA`, both identified more pathway from down-regulated list.
+
+### Up-regulated (Higher in Control/Lower in TBI)
 
 ...
 
-## Interpretation
+### Down-regulated (Lower in Control/Higher in TBI)
+
+...
+
+### Compare with Thresholded analysis (ORA)
 
 ...
 
@@ -456,11 +478,11 @@ Follow barder's lab [Module 2 lab - GSEA tutorial](https://baderlab.github.io/CB
 
 3.  How many genesets were returned with what thresholds?
 
--   Number of genesets within All genes: 496
+-   Number of genesets for All genes: 496
 
--   Number of genesets within Down-regulated genes: 579
+-   Number of genesets for Down-regulated genes: 579
 
--   Number of genesets within Up-regulated genes: 112
+-   Number of genesets for Up-regulated genes: 112
 
 -   Link to section: [Thresholded over-representation analysis (ORA), Result](#ORA-result)
 
@@ -488,17 +510,13 @@ Follow barder's lab [Module 2 lab - GSEA tutorial](https://baderlab.github.io/CB
 
 -   Link to section: [Non-thresholded Gene set Enrichment analysis, Generate .rnk file and fetch .gmt file](#GSEA-file-prepare)
 
-3.  How many genesets were returned with what thresholds?
+3.  Summarize
 
--   ...
+-   Link to section: [Non-thresholded Gene set Enrichment analysis, Result](#GSEA-Result)
 
-4.  How do these results compare to the results from the thresholded analysis in Assignment #2. Compare qualitatively. Is this a straight forward comparison? Why or why not?
+5.  Compare with thresholded analysis (ORA)
 
--   ...
-
-5.  Interpretation
-
--   ...
+-   Link to section: [Non-thresholded Gene set Enrichment analysis, Interpretation](#GSEA-Interpretation)
 
 ## Cytoscape visualization
 
