@@ -67,7 +67,7 @@ library(knitr)
 -   Control: non-neuronal death postmortem brain
 -   Treatment: Traumatic brain injury (TBI)
 
-![Figure 1: Data overview (Garza et al, 2023; Supplemental table 1)](Data_description.png)
+![Figure 1: Data overview (Garza et al, 2023; Supplemental table 1)](figure/Data_description.png)
 
 ## Assignment #1 result introduction
 
@@ -316,7 +316,7 @@ Pathways identified were concentrated in neuron-specific functions, like synapti
 
 ### Down-regulated (Lower in Control/Higher in TBI)
 
-Pathways identified were concentrated in general terms like cellular process and metabolic function. While these terms exhibit statistically extremely low `p_value` and massive intersection sizes compare with Up-regulated gene, it's not as biologically relevant as specific term like synapse assembly enriched in up-regulated genes. The statistical significance of those general terms are likely result from their position at the top of the GO hierarchy rather than an indicator of high biological relevance. Thus the interpretation can be ambiguous. 
+Pathways identified were concentrated in general terms like cellular process and metabolic function. While these terms exhibit statistically extremely low `p_value` and massive intersection sizes compare with Up-regulated gene, it's not as biologically relevant as specific term like synapse assembly enriched in up-regulated genes. The statistical significance of those general terms are likely result from their position at the top of the GO hierarchy rather than an indicator of high biological relevance. Thus the interpretation can be ambiguous.
 
 While the data safely concludes that TBI alters baseline metabolic transcription, interpreting this as `hyperactive` or `healthy` metabolism is conflicts with literature ([Oft et al, 2024](https://doi-org.myaccess.library.utoronto.ca/10.1186/s12974-024-03177-6), [Haria et al, 2025](https://doi-org.myaccess.library.utoronto.ca/10.1016/j.bbr.2025.115697), [Demers-Marcil & Coles, 2022](https://doi-org.myaccess.library.utoronto.ca/10.1097/ACO.0000000000001183)) that characterizes TBI by profound metabolic failure. One explanation for this higher metabolic transcript observed in TBI is it's compensatory response that brain is trying to recover from existing metabolic failure by transcribe more metabolic gene.
 
@@ -326,7 +326,74 @@ The top enriched pathways in the all DEGs analysis were very similar with the do
 
 # Non-thresholded Gene set Enrichment analysis
 
-...
+Barder lab's tutorial on [Run GSEA from within R](https://risserlin.github.io/CBW_pathways_workshop_R_notebooks/run-gsea-from-within-r.html) state that `GSEA` doesn't have official R package to run. So I will use [GSEA desktop software](https://www.gsea-msigdb.org/gsea/index.jsp) to run `GSEA` and describe my process and result in words and image.
+
+## Process
+
+### Generate .rnk file and fetch .gmt file
+
+`p_FC` value defined previously was utilized for ranking.
+
+```{r}
+# 1. Format the dataframe for GSEA
+gsea_rnk <- a1_de_result %>%
+  rownames_to_column(var = "Gene") %>%
+  dplyr::select(Gene, p_FC) %>%                         # Keep ONLY the gene name and the ranking metric
+  filter(!is.na(Gene) & !is.na(p_FC)) %>%        # Drop any rows with missing values
+  group_by(Gene) %>%
+  summarize(p_FC = max(p_FC)) %>%                # Resolve any rare duplicate genes by taking the max score
+  arrange(desc(p_FC))                            # CRITICAL: Sort strictly in descending order
+
+# 2. Export the bulletproof .rnk file to your working directory
+write.table(gsea_rnk, 
+            file = "A2_JiaqiMa.rnk", 
+            sep = "\t", 
+            quote = FALSE,       # Prevents R from wrapping gene names in " "
+            col.names = FALSE,   # GSEA prefers raw data without headers
+            row.names = FALSE)
+
+# Print a success message and check the file structure
+cat("Successfully generated A2_JiaqiMa.rnk with", nrow(gsea_rnk), "unique genes.\n")
+head(gsea_rnk)
+
+# Clean variable
+rm(gsea_rnk)
+```
+
+Fetch the `Sep_01_2025` .gmt file from [barder's lab](https://download.baderlab.org/EM_Genesets/September_01_2025/Human/symbol/Human_GOBP_AllPathways_noPFOCR_no_GO_iea_September_01_2025_symbol.gmt).
+
+```{r}
+# Define the exact URL for the Bader Lab GMT file
+gmt_url <- "https://download.baderlab.org/EM_Genesets/September_01_2025/Human/symbol/Human_GOBP_AllPathways_noPFOCR_no_GO_iea_September_01_2025_symbol.gmt"
+
+# Define the local destination file name in your working directory
+dest_gmt_file <- "Human_GOBP_AllPathways_no_iea_Sep_2025.gmt"
+
+# Execute the download
+if (!file.exists(dest_gmt_file)) {
+  download.file(url = gmt_url, destfile = dest_gmt_file)
+} else {
+  cat("File already exist\n")
+}
+
+# Clean variable
+rm(gmt_url)
+rm(dest_gmt_file)
+```
+
+### Method
+
+Follow barder's lab [Module 2 lab - GSEA tutorial](https://baderlab.github.io/CBW_Pathways_2024/gsea-lab.html)
+
+-   GSEA version: `v4.4.0`
+-   Ranked DEGs: `A2_JiaqiMa.rnk`
+-   Pathway data: `Human_GOBP_AllPathways_no_iea_Sep_2025.gmt`
+-   Number of permutations: 2000
+-   Collapse/Remap to gene symbols: No_Collapse
+-   Max size: 500 (default)
+-   Min size: 15 (default)
+
+![Figure 3: Scrennshot of GSEA parameters](figure/gsea_param.png)
 
 ## result
 
