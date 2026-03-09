@@ -49,6 +49,8 @@ if (!requireNamespace("knitr", quietly = TRUE))
   install.packages("knitr")
 if (!requireNamespace("dplyr", quietly = TRUE))
   install.packages("dplyr")
+if (!requireNamespace("HGNChelper", quietly = TRUE))
+  install.packages("HGNChelper")
 
 # Attach
 library(dplyr)
@@ -56,6 +58,7 @@ library(tibble)
 library(gprofiler2)
 library(GSA)
 library(knitr)
+library(HGNChelper)
 ```
 
 # Introduction to Assignment #1
@@ -158,7 +161,7 @@ a1_de_result <- a1_de_result %>%
 head(a1_de_result)
 ```
 
-# Thresholded over-representation analysis (ORA)
+# Thresholded over-representation analysis (ORA) {#ORA}
 
 Consult Barder lab's tutorial on [Run g:profiler from R](https://risserlin.github.io/CBW_pathways_workshop_R_notebooks/run-gprofiler-from-r.html) and `gprofiler2` package [vignettes](https://cran.r-project.org/web/packages/gprofiler2/vignettes/gprofiler2.html)
 
@@ -199,7 +202,7 @@ cat("Up-regulated genes: ", nrow(up_genes), "\n")
 rm(p_val_adj_threshold)
 ```
 
-## Result
+## Result {#ORA-result}
 
 `g:profiler`([Kolberg et al, 2023](https://doi-org.myaccess.library.utoronto.ca/10.1093/nar/gkad347)), `g:GOSt` was utilized to conduct ORA with `Benjamini-Hochberg` to correct p value. The `R` interface of `g:profiler` is provided as `gprofiler2` package ([CRAN, gprofiler2](https://doi.org/10.32614/CRAN.package.gprofiler2)). I choice this method because this is the one taught in BCB240. The original paper ([Garze et al, 2023](https://doi.org/10.1016/j.celrep.2023.113395)) was using `clusterProfiler` ([Xu et al, 2024](https://doi.org/10.1038/s41596-024-01020-z)), but they didn't specify the method of choice to correct p value.
 
@@ -232,7 +235,7 @@ cat("Significant GO:BP pathways for Up-regulated genes:",
     sum(ora_results$result$query == "Up_regulated"), "\n")
 ```
 
-`496` significant pathway/geneset were identified within in all significant genes; `112` significant pathway/geneset were identified within up-regulated genes; `579` significant pathway/geneset were identified within down-regulated genes; Note the number of significant pathway identified in down-regulated genes is more than all significant genes.
+`496` significant pathway/geneset were identified within in all significant genes; `579` significant pathway/geneset were identified within down-regulated genes; `112` significant pathway/geneset were identified within up-regulated genesNote the number of significant pathway identified in down-regulated genes is more than all significant genes.
 
 ```{r}
 # Visualize by Manhattan plot
@@ -300,7 +303,7 @@ rm(up_top10)
 
 The pathways identified within all significant and down-regulated genes were generally cellular metabolism. Whereas the pathways identified within up-regulated genes were neuron specific, concentrate at projection, synapse assembly and transmission. Also, the pathway identified in all significant and down-regulated genes were more significant, indicate by lower `p-value` and greater `intersection_size`.
 
-## Interpretation
+## Interpretation {#ORA-interpretation}
 
 **Critical note:**Because of how I assign identity parameter in `Seurat::FindMarkers()` in assignment #1.
 
@@ -324,13 +327,13 @@ While the data safely concludes that TBI alters baseline metabolic transcription
 
 The top enriched pathways in the all DEGs analysis were very similar with the down-regulated list, heavily dominated by broad, top-level GO parent terms like `cellular process` and `metabolic process`. This similarity is a direct statistical artifact of ranking methodology that only rank based on `p value`. Consequently, the top pathway identified from all DEGs were occupied by statistically significant down-regulated pathway whereas more specific, biologically informative pathway captured in the up-regulated list are entirely eclipsed in the combined analysis. Thus it's not sufficient to conclude `metabolic activity` is more effected by TBI than `synaptic activity`.
 
-# Non-thresholded Gene set Enrichment analysis
+# Non-thresholded Gene set Enrichment analysis {#GSEA}
 
-Barder lab's tutorial on [Run GSEA from within R](https://risserlin.github.io/CBW_pathways_workshop_R_notebooks/run-gsea-from-within-r.html) state that `GSEA` doesn't have official R package to run. So I will use [GSEA desktop software](https://www.gsea-msigdb.org/gsea/index.jsp) to run `GSEA` and describe my process and result in words and image.
+Barder lab's tutorial on [Run GSEA from within R](https://risserlin.github.io/CBW_pathways_workshop_R_notebooks/run-gsea-from-within-r.html) state that `GSEA` doesn't have official R package to run. So I will use [GSEA desktop software](https://www.gsea-msigdb.org/gsea/index.jsp) to run `GSEA` and describe my process and result in text and figure.
 
 ## Process
 
-### Generate .rnk file and fetch .gmt file
+### Generate .rnk file and fetch .gmt file {#GSEA-file-prepare}
 
 `p_FC` value defined previously was utilized for ranking.
 
@@ -344,8 +347,29 @@ gsea_rnk <- a1_de_result %>%
   summarize(p_FC = max(p_FC)) %>%                # Resolve any rare duplicate genes by taking the max score
   arrange(desc(p_FC))                            # CRITICAL: Sort strictly in descending order
 
-# 2. Export the bulletproof .rnk file to your working directory
-write.table(gsea_rnk, 
+# 2. Extract current gene symbols from the ranked dataframe
+current_symbols <- gsea_rnk$Gene
+
+# 3. Run them through the HGNC database (this takes a few seconds)
+# It identifies outdated aliases and provides the 'Suggested.Symbol'
+hgnc_mapping <- checkGeneSymbols(current_symbols)
+
+# 4. Merge the updated symbols back into your ranked dataframe
+gsea_rnk_updated <- gsea_rnk %>%
+  # Temporarily bind the mapping results
+  bind_cols(Suggested_Symbol = hgnc_mapping$Suggested.Symbol,
+            Is_Approved = hgnc_mapping$Approved) %>%
+  # If a new valid symbol exists, use it. If not, keep the original.
+  mutate(Final_Gene = ifelse(!is.na(Suggested_Symbol), Suggested_Symbol, Gene)) %>%
+  # Handle the rare case where multiple old aliases map to the same new symbol
+  group_by(Final_Gene) %>%
+  summarize(p_FC = max(p_FC)) %>%
+  arrange(desc(p_FC)) %>%
+  # Rename column back to standard
+  dplyr::select(Gene = Final_Gene, p_FC)
+
+# 5. Export the bulletproof .rnk file to your working directory
+write.table(gsea_rnk_updated, 
             file = "A2_JiaqiMa.rnk", 
             sep = "\t", 
             quote = FALSE,       # Prevents R from wrapping gene names in " "
@@ -353,11 +377,14 @@ write.table(gsea_rnk,
             row.names = FALSE)
 
 # Print a success message and check the file structure
-cat("Successfully generated A2_JiaqiMa.rnk with", nrow(gsea_rnk), "unique genes.\n")
-head(gsea_rnk)
+cat("Successfully generated A2_JiaqiMa.rnk with", nrow(gsea_rnk_updated), "unique genes.\n")
+head(gsea_rnk_updated)
 
 # Clean variable
 rm(gsea_rnk)
+rm(gsea_rnk_updated)
+rm(current_symbols)
+rm(hgnc_mapping)
 ```
 
 Fetch the `Sep_01_2025` .gmt file from [barder's lab](https://download.baderlab.org/EM_Genesets/September_01_2025/Human/symbol/Human_GOBP_AllPathways_noPFOCR_no_GO_iea_September_01_2025_symbol.gmt).
@@ -373,7 +400,7 @@ dest_gmt_file <- "Human_GOBP_AllPathways_no_iea_Sep_2025.gmt"
 if (!file.exists(dest_gmt_file)) {
   download.file(url = gmt_url, destfile = dest_gmt_file)
 } else {
-  cat("File already exist\n")
+  cat(".gmt File already exist\n")
 }
 
 # Clean variable
@@ -393,7 +420,7 @@ Follow barder's lab [Module 2 lab - GSEA tutorial](https://baderlab.github.io/CB
 -   Max size: 500 (default)
 -   Min size: 15 (default)
 
-![Figure 3: Scrennshot of GSEA parameters](figure/gsea_param.png)
+![Figure 3: Screenshot of GSEA parameters](figure/gsea_param.png)
 
 ## result
 
@@ -417,33 +444,49 @@ Follow barder's lab [Module 2 lab - GSEA tutorial](https://baderlab.github.io/CB
 
 1.  Which method did you choose and why?
 
--   ...
+-   I choose `g:profiler`'s `gprofiler2` R package, because this is the one taught in lecture.
+
+-   Link to section: [Thresholded over-representation analysis (ORA)](#ORA)
 
 2.  What annotation data did you use and why? What version of the annotation are you using?
 
--   ...
+-   I choose `Gene Ontology` because this is the one focused in lecture. More specifically `GO:BP` because the original paper ([Garze et al, 2023](https://doi.org/10.1016/j.celrep.2023.113395)) examined `GO:BP`. The version of annotation data is `e113_eg59_p19_6be52918`
+
+-   Link to section: [Thresholded over-representation analysis (ORA), Result](#ORA-result)
 
 3.  How many genesets were returned with what thresholds?
 
--   ...
+-   Number of genesets within All genes: 496
+
+-   Number of genesets within Down-regulated genes: 579
+
+-   Number of genesets within Up-regulated genes: 112
+
+-   Link to section: [Thresholded over-representation analysis (ORA), Result](#ORA-result)
 
 4.  How do these results compare to using the whole list (i.e all differentially expressed genes together vs. the up-regulated and down regulated differentially expressed genes separately)?
 
--   ...
+-   The whole list's result is very similar with Down-regulated's result, dominated by metabolic function. Up-regulated's result dominated by synaptic function.
+
+-   Link to section: [Thresholded over-representation analysis (ORA), Result](#ORA-result)
 
 5.  Interpretation
 
--   ...
+-   Link to section: [Thresholded over-representation analysis (ORA), Interpretation](#ORA-interpretation)
 
 ## Non-thresholded analysis
 
 1.  Which method did you choose and why?
 
--   ...
+-   I choose [GSEA JAVA desktop](https://www.gsea-msigdb.org/gsea/index.jsp) v4.4.0, because `GSEA` doesn't have an official R package and setup `GSEA JAVA` in R seems tedious.
+
+-   Link to section: [Non-thresholded Gene set Enrichment analysis](#GSEA)
 
 2.  What annotation data did you use and why? What version of the annotation are you using?
 
--   ...
+-   I choose `Sep_01_2025` .gmt file from [barder's lab](https://download.baderlab.org/EM_Genesets/September_01_2025/Human/symbol/Human_GOBP_AllPathways_noPFOCR_no_GO_iea_September_01_2025_symbol.gmt). I've tried the latest `March_02.2026` .gmt file, but it's bugged at loading phase in `GSEA`, so I then switch to the second latest.
+
+-   Link to section: [Non-thresholded Gene set Enrichment analysis, Generate .rnk file and fetch .gmt file](#GSEA-file-prepare)
 
 3.  How many genesets were returned with what thresholds?
 
