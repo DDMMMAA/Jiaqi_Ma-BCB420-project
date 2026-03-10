@@ -451,6 +451,8 @@ The top 20 up-regulated pathways is more uniform, except the top 1 pathway invol
 
 Just comparing the number of pathway identified, `GSEA` consist with `ORA`, both identified more pathway from down-regulated list.
 
+The neuroinflammation state and induced interferon signaling in TBI group aligned with original paper ([Garza et al, 2023](https://doi.org/10.1016/j.celrep.2023.113395)). However, their main finding, activation of endogenous retroviruses in oligodendroglia, was not identified because of resolution difference. [Garza et al, 2023](https://doi.org/10.1016/j.celrep.2023.113395) first cluster and identify specific cell types within whole `snRNA-seq` data and then conduct DEGs and enrichment analysis within specific cell type between control and TBI provide a higher transcriptome resolution. Whereas in this analysis, DEGs and enrichment analysis were conduct within all cell types.
+
 ### Up-regulated (Higher in Control/Lower in TBI)
 
 These pathways represent the specialized neurological architecture that is functionally suppressed or physically destroyed by the traumatic injury. The loss of `sensory perception`, `olfactory`, and `ion function` pathways indicates a targeted collapse of synaptic signaling networks, likely attributed to neuronal cell. `Olfactory dysregulation/impairment` specifically, has been reported as TBI hallmarks in literature([Liu et al, 2023](https://doi-org.myaccess.library.utoronto.ca/10.1016/j.bbi.2023.08.004), [Luca et al, 2023](https://doi.org/10.3389/fneur.2023.1193406), [Xydakis et al, 2015](https://doi.org/10.1212/WNL.0000000000001475)).
@@ -471,9 +473,9 @@ The top hit—TNF-alpha signaling via NF-kB—indicates is a well studied pathwa
 
 GSEA yields highly specific, functional pathways, whereas ORA produces broad, generic biological terms.
 
--    Characterizing Neurological Damage (Suppressed in TBI) ORA identified broad, generic structural terms like "synaptic signaling" and "cell projection organization." In contrast, GSEA isolated specific functional deficits, pinpointing the targeted collapse of olfactory and ion transport networks. Uniquely, GSEA also captured the mechanical shearing of ependymal motile cilia (annotated via structural homology as "sperm motility") , a critical pathology missed in ORA.
+-   Characterizing Neurological Damage (Suppressed in TBI) ORA identified broad, generic structural terms like "synaptic signaling" and "cell projection organization." In contrast, GSEA isolated specific functional deficits, pinpointing the targeted collapse of olfactory and ion transport networks. Uniquely, GSEA also captured the mechanical shearing of ependymal motile cilia (annotated via structural homology as "sperm motility") , a critical pathology missed in ORA.
 
--    Characterizing the TBI Stress Response (Induced in TBI) ORA characterized the cellular stress response using highly ambiguous, top-level categories like "primary metabolic process," failing to distinguish between healthy basal metabolism and a pathological crisis. Conversely, GSEA explicitly defined the exact nature of the cellular crisis: a severe, astrocyte-driven neuroinflammatory cascade (TNF-alpha signaling via NF-kB) paired with potentially stress-induced global translation enhancement.
+-   Characterizing the TBI Stress Response (Induced in TBI) ORA characterized the cellular stress response using highly ambiguous, top-level categories like "primary metabolic process," failing to distinguish between healthy basal metabolism and a pathological crisis. Conversely, GSEA explicitly defined the exact nature of the cellular crisis: a severe, astrocyte-driven neuroinflammatory cascade (TNF-alpha signaling via NF-kB) paired with potentially stress-induced global translation enhancement.
 
 However, there isn't a straight forward comparison because there exist multiple different input parameters (Thresholded v.s. non-thresholded; GO annotation v.s. Bader's lab collection; Non-restricted geneset v.s. Restricted geneset) and most importantly, algorithmic difference (gprofiler2 v.s.GSEA JAVA).
 
@@ -481,13 +483,47 @@ Instead of yielding comparable, overlapping pathways, the methods produced entir
 
 Therefore, the comparison is essentially interpreted. It is not an evaluation of two equivalent computational metrics, but rather attempting to map a vague, generalized outline of cellular stress (ORA) against a specific TBI pathology (GSEA).
 
-# Cytoscape Visualization
+# Cytoscape Visualization {#Cyto}
 
-...
+-   Platform: `Cytoscape 3.10.4` ([Shannon et al, 2003](https://doi-org.myaccess.library.utoronto.ca/10.1101/gr.1239303))
 
-# Interpretation
+-   Enrichment Map visualization: `EnrichmentMap 3.5.0` ([Merico et al, 2010](https://doi-org.myaccess.library.utoronto.ca/10.1371/journal.pone.0013984))
 
-...
+    ```         
+    Node Cutoff (FDR q-value): 0.05
+    Edge Cutoff (Similarity): 0.375
+    Colunm: GS_DESCR
+    ```
+
+-   Annotation: `AutoAnnotate 1.5.2` ([Reimand et al, 2019](https://doi-org.myaccess.library.utoronto.ca/10.1038/s41596-018-0103-9))
+
+    ```         
+    All parameters are default
+    ```
+
+# Result {#Cyto-Result}
+
+![Figure 8: Initial annotated enrichment map of GSEA result. Nodes represent significant pathways (FDR q < 0.05), with size proportional to gene count. Node color indicates enrichment direction: Blue for upregulation in TBI and Orange for upregulation in control. Edge thickness denotes the degree of gene overlap between pathways (Jaccard + Overlap Combined similarity cutoff = 0.375). Shaded boundaries and text labels indicate overarching biological themes clustered via the Markov Cluster Algorithm (MCL) using AutoAnnotate.](figure/A2_JiaqiMa_GSEA.GseaPreranked_500.png)
+
+\n
+
+There were `1268` nodes (pathway) and `12251` edges present in figure above.
+
+![Figure 9: Collapsed Theme network exclude pathway without neighbour (degree = 0). Nodes biological theme, collection of pathway, with size proportional to pathway count. Node color indicates enrichment direction: Blue for upregulation in TBI and Orange for upregulation in control.](figure/AutoAnnotate_Summary Network.png)
+
+There were `65` nodes (theme) and `87` edges present in figure above.
+
+For the sake or readability, all pathway without neighbor (in/out degree = 0) were removed from network prior collapse.
+
+# Interpretation {#Cyto-Interpretation}
+
+The theme network provides a macro-pathology view of TBI.
+
+Structural and Sensory Degradation (Suppressed in TBI): The only `sensory perception smell` node aligned the targeted collapse of `olfactory pathway` identified in the initial GSEA. However the `motile cilium` pathways were lost in the theme network, likely filtered out as insignificant or dropped as pathway without neighbor.
+
+Neuroinflammation (Induced in TBI): The `activation involved in inflammatory` node is closely related to `TNF-alpha signaling via NF-kB` pathway identified from GSEA. However, there also exist several unexpected immune response themes, such as `hepatitis infection toll`, `HIV elongation polymerase`, `immunoregulatory lymphoid leishmania`, and `pkr signaling tuberculosis`. This may result from biased annotation database. Because these infectious diseases are well studied, many shared innate immune cascades (e.g., DAMP/PAMP recognition via Toll-like receptors, MHC) are frequently annotated under these specific disease labels. Consequently, when TBI triggers these generic innate immune response, the algorithm will likely annotate them as well studied condition.
+
+Protein Turnover (Induced in TBI): The `Translational ubiquitination modification` and `posttranslation independent degradation` theme were strong indicator of protein turnover not identified in GSEA.
 
 # Question
 
@@ -551,24 +587,34 @@ Therefore, the comparison is essentially interpreted. It is not an evaluation of
 
 1.  How many nodes and how many edges in the resulting map? What thresholds were used to create this map?
 
--   ...
+-   There were `1268` nodes and `12251` edges present in resulting map; `FDR q < 0.05` and `Edge Cutoff (Similarity) = 0.375` were applied.
+
+-    Link to section: [Cytoscape Visualization](#Cyto)
 
 2.  What parameters did you use to annotate the network.
 
--   ...
+-   All parameters remain default
+
+-    Link to section: [Cytoscape Visualization](#Cyto)
 
 3.  What are the major themes present in this analysis? Do they fit with the model? Are there any novel pathways or themes?
 
--   ...
+-   For pathway induced pathway in control, the `olfactory pathway` identified aligned with GSEA; For pathway induced in TBI, the major themes were `various immune response` and `protein turnover`.
+
+-    Link to section: [Cytoscape Visualization, Interpretation](#Cyto-Interpretation)
 
 ## Interpretation
 
 1.  Do the enrichment results support conclusions or mechanism discussed in the original paper? How do these results differ from the results you got from Assignment #2 thresholded methods
 
--   ...
+-    Partially aligned with original paper ([Garza et al, 2023](https://doi.org/10.1016/j.celrep.2023.113395)). Neuroinflammation state was confirmed but activation of endogenous retroviruses in oligodendroglia was missing, presumably because of resolution difference; GSEA provde more specific pathway.
+
+-   Link to section: [Non-thresholded Gene set Enrichment analysis, Interpretation](#GSEA-Interpretation)
 
 2.  Can you find evidence, i.e. publications, to support some of the results that you see. How does this evidence support your result?
 
--   ...
+-    The `olfactory dysfunction`, `motile cilia dysfunction` and `neuroinflammation` were well supported by literature; `olfactory dysfunction` was supported by observing `olfactory impairment` phenotype in TBI cases clinically;  `motile cilia dysfunction` was supported by similar scRNA-seq analysis; `neuroinflammation` was supported by similar scRNA-seq and NF-kB overexpression/repression experiment on mouse model.
+
+-   Link to section: [Non-thresholded Gene set Enrichment analysis, Interpretation](#GSEA-Interpretation)
 
 # References {#references}
